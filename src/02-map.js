@@ -32,7 +32,16 @@ Promise.all([
   .then(ready)
   .catch(err => console.log('Failed on', err))
 
+let coordinateStore = d3.map()
+
 function ready([json, datapointsFlights, datapointsAirports]) {
+
+  datapointsAirports.forEach(d => {
+    let name = d.name
+    let coords = [d.longitude, d.latitude]
+    coordinateStore.set(name, coords)
+  })
+
   // console.log(json.objects)
   let countries = topojson.feature(json, json.objects.countries)
 
@@ -56,15 +65,33 @@ function ready([json, datapointsFlights, datapointsAirports]) {
     .attr('stroke', 'black')
     .lower()
 
-console.log(datapointsAirports)
+  // adding the airport dots
 
+  // console.log(datapointsAirports)
   svg
     .selectAll('.airports')
     .data(datapointsAirports)
     .enter()
     .append('circle')
     .attr('r', 2)
-    .attr('fill', 'red')
-    .attr('transform', `translate(${projection([d.longitude, d.latitude])})`)
-    
+    .attr('fill', 'white')
+    .attr('transform', d => {
+      let coords2 = projection([d.longitude, d.latitude])
+      return `translate(${coords2})`
+    })
+
+  // adding the flight paths
+  let geoLine = {
+    type: 'LineString',
+    coordinates: [[-74, 40], coordinateStore]
+  }
+
+  svg
+  .selectAll('.flightPaths')
+  .data(datapointsAirports)
+  .enter().append('path')
+  .attr('d', d => path(geoLine))
+  .attr('stroke', 'white')
+  .attr('stroke-width', 1)
+
 }

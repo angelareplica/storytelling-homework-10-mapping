@@ -30168,11 +30168,19 @@ Promise.all([d3.json(require('./data/world.topojson')), d3.csv(require('./data/f
   return console.log('Failed on', err);
 });
 
+var coordinateStore = d3.map();
+
 function ready(_ref) {
   var _ref2 = _slicedToArray(_ref, 3),
       json = _ref2[0],
       datapointsFlights = _ref2[1],
       datapointsAirports = _ref2[2];
+
+  datapointsAirports.forEach(function (d) {
+    var name = d.name;
+    var coords = [d.longitude, d.latitude];
+    coordinateStore.set(name, coords);
+  });
 
   // console.log(json.objects)
   var countries = topojson.feature(json, json.objects.countries);
@@ -30183,9 +30191,23 @@ function ready(_ref) {
 
   svg.append('path').datum({ type: 'Sphere' }).attr('d', path).attr('fill', 'lightblue').attr('stroke', 'black').lower();
 
-  console.log(datapointsAirports);
+  // adding the airport dots
 
-  svg.selectAll('.airports').data(datapointsAirports).enter().append('circle').attr('r', 2).attr('fill', 'red').attr('transform', 'translate(' + projection([d.longitude, d.latitude]) + ')');
+  // console.log(datapointsAirports)
+  svg.selectAll('.airports').data(datapointsAirports).enter().append('circle').attr('r', 2).attr('fill', 'white').attr('transform', function (d) {
+    var coords2 = projection([d.longitude, d.latitude]);
+    return 'translate(' + coords2 + ')';
+  });
+
+  // adding the flight paths
+  var geoLine = {
+    type: 'LineString',
+    coordinates: [[-74, 40], coordinateStore]
+  };
+
+  svg.selectAll('.flightPaths').data(datapointsAirports).enter().append('path').attr('d', function (d) {
+    return path(geoLine);
+  }).attr('stroke', 'white').attr('stroke-width', 1);
 }
 },{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js","d3-scale":"../node_modules/d3-scale/src/index.js","./data/world.topojson":"data/world.topojson","./data/flights.csv":"data/flights.csv","./data/airport-codes-subset.csv":"data/airport-codes-subset.csv"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
