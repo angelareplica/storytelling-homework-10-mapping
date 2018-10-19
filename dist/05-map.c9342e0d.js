@@ -30122,12 +30122,22 @@ Object.keys(_topojsonSimplify).forEach(function (key) {
     }
   });
 });
-},{"topojson-client":"../node_modules/topojson/node_modules/topojson-client/index.js","topojson-server":"../node_modules/topojson/node_modules/topojson-server/index.js","topojson-simplify":"../node_modules/topojson/node_modules/topojson-simplify/index.js"}],"05-map.js":[function(require,module,exports) {
+},{"topojson-client":"../node_modules/topojson/node_modules/topojson-client/index.js","topojson-server":"../node_modules/topojson/node_modules/topojson-server/index.js","topojson-simplify":"../node_modules/topojson/node_modules/topojson-simplify/index.js"}],"data/us_states.topojson":[function(require,module,exports) {
+"use strict";
+
+module.exports = "/us_states.60878ca0.topojson";
+},{}],"data/powerplants.csv":[function(require,module,exports) {
+"use strict";
+
+module.exports = "/powerplants.27e4c946.csv";
+},{}],"05-map.js":[function(require,module,exports) {
 'use strict';
 
-var _d = require('d3');
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-var d3 = _interopRequireWildcard(_d);
+var _d2 = require('d3');
+
+var d3 = _interopRequireWildcard(_d2);
 
 var _topojson = require('topojson');
 
@@ -30142,7 +30152,86 @@ var height = 600 - margin.top - margin.bottom;
 var width = 900 - margin.left - margin.right;
 
 var svg = d3.select('#chart-5').append('svg').attr('height', height + margin.top + margin.bottom).attr('width', width + margin.left + margin.right).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-},{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+var projection = d3.geoAlbersUsa();
+
+var path = d3.geoPath().projection(projection);
+
+var colorScale = d3.scaleOrdinal(d3.schemeDark2);
+
+var radiusScale = d3.scaleSqrt().range([1, 20]);
+
+var yPositionScale = d3.scaleBand().range([450, 150]);
+
+// read in the data
+Promise.all([d3.json(require('./data/us_states.topojson')), d3.csv(require('./data/powerplants.csv'))]).then(ready).catch(function (err) {
+  return console.log('Failed on', err);
+});
+
+function ready(_ref) {
+  var _ref2 = _slicedToArray(_ref, 2),
+      json = _ref2[0],
+      datapoints = _ref2[1];
+
+  console.log(json.objects); // find out what all the layers are called
+  var states = topojson.feature(json, json.objects.us_states);
+
+  projection.fitSize([width, height], states);
+
+  // sizing the points based on minimum and maximum output
+
+  var outputs = datapoints.map(function (d) {
+    return +d.Total_MW;
+  });
+
+  var maxOutput = d3.max(outputs);
+  var minOutput = d3.min(outputs);
+
+  radiusScale.domain([minOutput, maxOutput]);
+
+  // making a list of powerplant types for the legend
+
+  var powerplants = datapoints.map(function (d) {
+    return d.PrimSource;
+  });
+
+  var powerplantCategories = d3.set(powerplants).values();
+  yPositionScale.domain(powerplantCategories);
+
+  svg.selectAll('.state').data(states.features).enter().append('path').attr('class', 'state').attr('d', path).attr('fill', 'lightgrey');
+
+  svg.selectAll('.powerplant').data(datapoints).enter().append('circle').attr('class', 'powerplant').attr('r', function (d) {
+    return radiusScale(d.Total_MW);
+  }).attr('transform', function (d) {
+    var coords = projection([d.Longitude, d.Latitude]);
+    return 'translate(' + coords + ')';
+  }).attr('fill', function (d) {
+    return colorScale(d.PrimSource);
+  }).attr('opacity', 0.3);
+
+  // console.log('states', states)
+  // console.log('datspoints', datapoints)
+
+  svg.selectAll('.state-label').data(states.features).enter().append('text').attr('class', 'state-label').text(function (d) {
+    return d.properties.abbrev;
+  }).attr('transform', function (d) {
+    var coords = projection(d3.geoCentroid(d));
+    return 'translate(' + coords + ')';
+  }).attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').attr('font-size', 15).style('text-shadow', '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff');
+
+  svg.selectAll('.legend-circles').data(powerplantCategories).enter().append('circle').attr('class', 'legend-circles').attr('cx', -120).attr('cy', function (d) {
+    return yPositionScale(d);
+  }).attr('r', 10).attr('fill', function (d) {
+    return colorScale(d);
+  }).attr('opacity', 0.8);
+
+  svg.selectAll('.legend-text').data(powerplantCategories).enter().append('text').attr('class', 'legend-text').attr('x', -100).attr('y', function (d) {
+    return yPositionScale(d);
+  }).text(function (d) {
+    return d.charAt(0).toUpperCase() + d.slice(1);
+  }).attr('alignment-baseline', 'middle');
+}
+},{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js","./data/us_states.topojson":"data/us_states.topojson","./data/powerplants.csv":"data/powerplants.csv"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -30171,7 +30260,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53863' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '51461' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 

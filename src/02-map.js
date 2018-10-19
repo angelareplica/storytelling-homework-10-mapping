@@ -1,6 +1,6 @@
 import * as d3 from 'd3'
 import * as topojson from 'topojson'
-import { scaleBand } from 'd3-scale'
+// import { scaleBand } from 'd3-scale'
 
 let margin = { top: 0, left: 0, right: 0, bottom: 0 }
 
@@ -26,7 +26,7 @@ let path = d3.geoPath().projection(projection)
 // read in the data
 Promise.all([
   d3.json(require('./data/world.topojson')),
-  d3.csv(require('./data/flights.csv')),
+  // d3.csv(require('./data/flights.csv')),
   d3.csv(require('./data/airport-codes-subset.csv'))
 ])
   .then(ready)
@@ -34,10 +34,9 @@ Promise.all([
 
 let coordinateStore = d3.map()
 
-function ready([json, datapointsFlights, datapointsAirports]) {
-
+function ready([json, datapointsAirports]) {
   datapointsAirports.forEach(d => {
-    let name = d.name
+    let name = d.ident
     let coords = [d.longitude, d.latitude]
     coordinateStore.set(name, coords)
   })
@@ -57,6 +56,8 @@ function ready([json, datapointsFlights, datapointsAirports]) {
     .attr('stroke', 'black')
     .attr('stroke-width', 0.5)
 
+  // projection.fitSize([width, height], countries)
+
   svg
     .append('path')
     .datum({ type: 'Sphere' })
@@ -73,7 +74,7 @@ function ready([json, datapointsFlights, datapointsAirports]) {
     .data(datapointsAirports)
     .enter()
     .append('circle')
-    .attr('r', 2)
+    .attr('r', 2.5)
     .attr('fill', 'white')
     .attr('transform', d => {
       let coords2 = projection([d.longitude, d.latitude])
@@ -81,17 +82,29 @@ function ready([json, datapointsFlights, datapointsAirports]) {
     })
 
   // adding the flight paths
-  let geoLine = {
-    type: 'LineString',
-    coordinates: [[-74, 40], coordinateStore]
-  }
+  // let geoLine = {
+  //   type: 'LineString',
+  //   coordinates: [[-74, 40], coordinateStore]
+  // }
 
   svg
-  .selectAll('.flightPaths')
-  .data(datapointsAirports)
-  .enter().append('path')
-  .attr('d', d => path(geoLine))
-  .attr('stroke', 'white')
-  .attr('stroke-width', 1)
-
+    .selectAll('.flightPaths')
+    .data(datapointsAirports)
+    .enter()
+    .append('path')
+    .attr('d', d => {
+      // save as variable
+      let nyc = [-74, 40]
+      let toCoords = coordinateStore.get(d.ident)
+      // build a GeoJSON LineString
+      var geoLine = {
+        type: 'LineString',
+        coordinates: [nyc, toCoords]
+      }
+      // Feed that line to our d3.geoPath()
+      return path(geoLine)
+    })
+    .attr('fill', 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1.25)
 }

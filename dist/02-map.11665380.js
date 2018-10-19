@@ -30126,10 +30126,6 @@ Object.keys(_topojsonSimplify).forEach(function (key) {
 "use strict";
 
 module.exports = "/world.7a9caddf.topojson";
-},{}],"data/flights.csv":[function(require,module,exports) {
-"use strict";
-
-module.exports = "/flights.395cb942.csv";
 },{}],"data/airport-codes-subset.csv":[function(require,module,exports) {
 "use strict";
 
@@ -30147,9 +30143,9 @@ var _topojson = require('topojson');
 
 var topojson = _interopRequireWildcard(_topojson);
 
-var _d3Scale = require('d3-scale');
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+// import { scaleBand } from 'd3-scale'
 
 var margin = { top: 0, left: 0, right: 0, bottom: 0 };
 
@@ -30164,20 +30160,21 @@ var projection = d3.geoEqualEarth().rotate([-10, 0]).scale(150);
 var path = d3.geoPath().projection(projection);
 
 // read in the data
-Promise.all([d3.json(require('./data/world.topojson')), d3.csv(require('./data/flights.csv')), d3.csv(require('./data/airport-codes-subset.csv'))]).then(ready).catch(function (err) {
+Promise.all([d3.json(require('./data/world.topojson')),
+// d3.csv(require('./data/flights.csv')),
+d3.csv(require('./data/airport-codes-subset.csv'))]).then(ready).catch(function (err) {
   return console.log('Failed on', err);
 });
 
 var coordinateStore = d3.map();
 
 function ready(_ref) {
-  var _ref2 = _slicedToArray(_ref, 3),
+  var _ref2 = _slicedToArray(_ref, 2),
       json = _ref2[0],
-      datapointsFlights = _ref2[1],
-      datapointsAirports = _ref2[2];
+      datapointsAirports = _ref2[1];
 
   datapointsAirports.forEach(function (d) {
-    var name = d.name;
+    var name = d.ident;
     var coords = [d.longitude, d.latitude];
     coordinateStore.set(name, coords);
   });
@@ -30189,27 +30186,37 @@ function ready(_ref) {
   svg.selectAll('.country').data(countries.features) // always going to be .features when you bind data. that's the list of objects you can draw inside of a geojson
   .enter().append('path').attr('class', 'country').attr('d', path).attr('fill', 'lightgrey').attr('stroke', 'black').attr('stroke-width', 0.5);
 
+  // projection.fitSize([width, height], countries)
+
   svg.append('path').datum({ type: 'Sphere' }).attr('d', path).attr('fill', 'lightblue').attr('stroke', 'black').lower();
 
   // adding the airport dots
 
   // console.log(datapointsAirports)
-  svg.selectAll('.airports').data(datapointsAirports).enter().append('circle').attr('r', 2).attr('fill', 'white').attr('transform', function (d) {
+  svg.selectAll('.airports').data(datapointsAirports).enter().append('circle').attr('r', 2.5).attr('fill', 'white').attr('transform', function (d) {
     var coords2 = projection([d.longitude, d.latitude]);
     return 'translate(' + coords2 + ')';
   });
 
   // adding the flight paths
-  var geoLine = {
-    type: 'LineString',
-    coordinates: [[-74, 40], coordinateStore]
-  };
+  // let geoLine = {
+  //   type: 'LineString',
+  //   coordinates: [[-74, 40], coordinateStore]
+  // }
 
   svg.selectAll('.flightPaths').data(datapointsAirports).enter().append('path').attr('d', function (d) {
-    return path(geoLine);
-  }).attr('stroke', 'white').attr('stroke-width', 1);
+    // save as variable
+    var nyc = [-74, 40];
+    var toCoords = coordinateStore.get(d.ident);
+    // build a GeoJSON LineString
+    var geoLine = {
+      type: 'LineString',
+      coordinates: [nyc, toCoords]
+      // Feed that line to our d3.geoPath()
+    };return path(geoLine);
+  }).attr('fill', 'none').attr('stroke', 'white').attr('stroke-width', 1.25);
 }
-},{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js","d3-scale":"../node_modules/d3-scale/src/index.js","./data/world.topojson":"data/world.topojson","./data/flights.csv":"data/flights.csv","./data/airport-codes-subset.csv":"data/airport-codes-subset.csv"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js","./data/world.topojson":"data/world.topojson","./data/airport-codes-subset.csv":"data/airport-codes-subset.csv"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -30238,7 +30245,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53863' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '51461' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 

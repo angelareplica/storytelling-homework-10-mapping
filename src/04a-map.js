@@ -14,3 +14,48 @@ let svg = d3
   .attr('width', width + margin.left + margin.right)
   .append('g')
   .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+
+let projection = d3.geoAlbersUsa()
+
+let path = d3.geoPath().projection(projection)
+
+// let colorScale = d3
+//   .scaleOrdinal()
+//   .domain(['OBAMA', 'ROMNEY'])
+//   .range(['green', 'purple'])
+
+let colorScale = d3.scaleSequential(d3.interpolatePiYG).domain([0, 1])
+
+let opacityScale = d3
+  .scaleLinear()
+  .domain([0, 50000])
+  .range([0, 1])
+  .clamp(true)
+
+// read in the data
+d3.json(require('./data/counties.topojson'))
+  .then(ready)
+  .catch(err => console.log('Failed on', err))
+
+function ready(json) {
+  console.log(json.objects)
+  let counties = topojson.feature(json, json.objects.elpo12p010g)
+
+  // projection.fitSize([width, height], counties)
+
+  svg
+    .selectAll('.county')
+    .data(counties.features)
+    .enter()
+    .append('path')
+    .attr('class', 'county')
+    .attr('d', path)
+    // .attr('stroke', 'white')
+    .attr('fill', d => {
+      // console.log(d)
+      return colorScale(
+        d.properties.ROMNEY / (d.properties.ROMNEY + d.properties.OBAMA)
+      )
+    })
+    .attr('opacity', d => opacityScale(d.properties.TTL_VT))
+}

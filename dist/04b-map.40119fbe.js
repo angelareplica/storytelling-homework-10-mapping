@@ -30122,7 +30122,11 @@ Object.keys(_topojsonSimplify).forEach(function (key) {
     }
   });
 });
-},{"topojson-client":"../node_modules/topojson/node_modules/topojson-client/index.js","topojson-server":"../node_modules/topojson/node_modules/topojson-server/index.js","topojson-simplify":"../node_modules/topojson/node_modules/topojson-simplify/index.js"}],"04b-map.js":[function(require,module,exports) {
+},{"topojson-client":"../node_modules/topojson/node_modules/topojson-client/index.js","topojson-server":"../node_modules/topojson/node_modules/topojson-server/index.js","topojson-simplify":"../node_modules/topojson/node_modules/topojson-simplify/index.js"}],"data/counties.topojson":[function(require,module,exports) {
+"use strict";
+
+module.exports = "/counties.8922fb9a.topojson";
+},{}],"04b-map.js":[function(require,module,exports) {
 'use strict';
 
 var _d = require('d3');
@@ -30142,7 +30146,38 @@ var height = 500 - margin.top - margin.bottom;
 var width = 900 - margin.left - margin.right;
 
 var svg = d3.select('#chart-4b').append('svg').attr('height', height + margin.top + margin.bottom).attr('width', width + margin.left + margin.right).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-},{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+var projection = d3.geoAlbersUsa();
+
+var path = d3.geoPath().projection(projection);
+
+var colorScale = d3.scaleOrdinal().domain(['OBAMA', 'ROMNEY']).range(['green', 'purple']);
+
+// let colorScale = d3.scaleOrdinal(d3.interpolatePiYG).domain(['OBAMA', 'ROMNEY'])
+
+var opacityScale = d3.scaleLinear().domain([0, 300000]).range([0, 1]);
+
+// read in the data
+d3.json(require('./data/counties.topojson')).then(ready).catch(function (err) {
+  return console.log('Failed on', err);
+});
+
+function ready(json) {
+  console.log(json.objects);
+  var counties = topojson.feature(json, json.objects.elpo12p010g);
+
+  // projection.fitSize([width, height], counties)
+
+  svg.selectAll('.county').data(counties.features).enter().append('path').attr('class', 'county').attr('d', path)
+  // .attr('stroke', 'white')
+  .attr('fill', function (d) {
+    // console.log(d)
+    return colorScale(d.properties.WINNER);
+  }).attr('opacity', function (d) {
+    return opacityScale(d.properties.TTL_VT);
+  });
+}
+},{"d3":"../node_modules/d3/index.js","topojson":"../node_modules/topojson/index.js","./data/counties.topojson":"data/counties.topojson"}],"../../../../.npm-global/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -30171,7 +30206,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53863' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '51461' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
